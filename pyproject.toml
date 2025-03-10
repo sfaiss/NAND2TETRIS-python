@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 79
+extend-exclude = ["**/tests"]
+
+[tool.ruff.lint]
+select = [
+    "I",   # isort
+    "E",   # pycodestyle
+    "W",   # pycodestyle
+    "F",   # Pyflakes
+    "PL",  # Pylint
+    "UP",  # pyupgrad
+]
