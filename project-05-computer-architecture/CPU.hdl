@@ -1,0 +1,91 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    // load A
+    Not(in=instruction[15], out=loadA1);                   // always load A-instruction
+    And(a=instruction[15], b=instruction[5], out=loadA2);  // only load C-instruction when dest-bit is set
+    Or(a=loadA1, b=loadA2, out=loadA);
+
+    // load D
+    And(a=instruction[15], b=instruction[4], out=loadD);   // only load C-instruction when dest-bit is set
+
+    // load M
+    And(a=instruction[15], b=instruction[3], out=writeM);  // only load C-instruction when dest-bit is set
+
+    // use inM
+    And(a=instruction[15], b=instruction[12], out=useInM);
+
+    Mux16(a=instruction, b=ALUout, sel=instruction[15], out=toA);
+    ARegister(in=toA, load=loadA, out=Aout, out[0..14]=addressM);
+    DRegister(in=ALUout, load=loadD, out=Dout);
+    Mux16(a=Aout, b=inM, sel=useInM, out=toALU);
+    ALU(x=Dout, y=toALU, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUout, out=outM, zr=zero, ng=negative);
+
+    // program counter
+    DMux8Way(in=true, sel=instruction[0..2], a=noJMP, b=JGT, c=JEQ, d=JGE, e=JLT, f=JNE, g=JLE, h=loadJMP);
+
+    Not(in=zero, out=notZero);
+    Not(in=negative, out=positive);
+
+    // JGT
+    And(a=notZero, b=positive, out=GT);
+    And(a=JGT, b=GT, out=loadJGT);
+
+    // JEQ
+    And(a=JEQ, b=zero, out=loadJEQ);
+
+    // JGE
+    Or(a=positive, b=zero, out=loadJGE1);
+    And(a=JGE, b=loadJGE1, out=loadJGE);
+
+    // JLT
+    And(a=JLT, b=negative, out=loadJLT);
+
+    // JNE
+    And(a=JNE, b=notZero, out=loadJNE);
+
+    // JLE
+    Or(a=negative, b=zero, out=loadJLE1);
+    And(a=JLE, b=loadJLE1, out=loadJLE);
+
+    // Any jump
+    Or8Way(in[0]=loadJGT, in[1]=loadJEQ, in[2]=loadJGE, in[3]=loadJLT, in[4]=loadJNE, in[5]=loadJLE, in[6]=loadJMP, out=loadPC1);
+
+    // only when C-instruction
+    And(a=loadPC1, b=instruction[15], out=loadPC);
+
+    // inc when load != 1
+    Not(in=loadPC, out=incPC);
+    PC(in=Aout, load=loadPC, inc=incPC, reset=reset, out[0..14]=pc);
+}
