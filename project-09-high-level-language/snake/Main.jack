@@ -1,0 +1,23 @@
+/** Main entry point */
+class Main {
+    function void main() {
+        var String play;
+        var Game game;
+        var int seed;
+        var char key;
+
+        let play = "Press 'p' to play";
+        do Output.moveCursor(12, 24);
+        do Output.printString(play);
+
+        while (~(key = 112)) {  // p key
+            let seed = Mod.mod(seed + 1, 4095);
+            let key = Keyboard.keyPressed();
+        }
+
+        do Random.init(seed);
+        let game = Game.new(1000);
+        do game.run();
+        return;
+    }
+}

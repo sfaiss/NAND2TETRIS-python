@@ -1,0 +1,67 @@
+/** Individual body segments of the snake */
+
+class Segment {
+    field Tile tile;
+    field Segment next;
+    field Segment prev;
+
+    constructor Segment new(Tile start) {
+        let tile = start;
+        let next = null;
+        let prev = null;
+        return this;
+    }
+
+    /** Dispose this and all following segments */
+    method void dispose() {
+        if (~(next = null)) {
+            do next.dispose();
+        }
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draw segment */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(tile.getX(), tile.getY(), tile.getX() + 16, tile.getY() + 16);
+        return;
+    }
+
+    /** Get next segment */
+    method Segment getNext() {
+        return next;
+    }
+
+    /** Set next segment */
+    method void setNext(Segment n) {
+        let next = n;
+        return;
+    }
+
+    /** Get previous segment */
+    method Segment getPrev() {
+        return prev;
+    }
+
+    /** Set previous segment */
+    method void setPrev(Segment n) {
+        let prev = n;
+        return;
+    }
+
+    /** Get x-coordinate */
+    method int getX() {
+        return tile.getX();
+    }
+
+    /** Get y-coordinate */
+    method int getY() {
+        return tile.getY();
+    }
+
+    /** Get tile */
+    method Tile getTile() {
+        return tile;
+    }
+}

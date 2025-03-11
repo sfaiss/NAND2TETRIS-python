@@ -1,0 +1,31 @@
+/** Piece of food that the snake eats to grow */
+class Food {
+    field Tile tile;
+
+    constructor Food new(Tile start) {
+        let tile = start;
+        return this;
+    }
+
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(tile.getX() + 4, tile.getY(), tile.getX() + 8, tile.getY() + 4);
+        do Screen.drawRectangle(tile.getX(), tile.getY() + 4, tile.getX() + 4, tile.getY() + 8);
+        do Screen.drawRectangle(tile.getX() + 8, tile.getY() + 4, tile.getX() + 12, tile.getY() + 8);
+        do Screen.drawRectangle(tile.getX() + 4, tile.getY() + 8, tile.getX() + 8, tile.getY() + 12);
+        return;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method int getX() {
+        return tile.getX();
+    }
+
+    method int getY() {
+        return tile.getY();
+    }
+}

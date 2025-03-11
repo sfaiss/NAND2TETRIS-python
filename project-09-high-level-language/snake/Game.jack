@@ -1,0 +1,93 @@
+/** Main game class */
+class Game {
+    field int dt;
+    field int tickCount;
+    field Snake snake;
+    field Food food;
+    field boolean redraw;
+    field Score score;
+
+    constructor Game new(int loopDuration) {
+        let dt = loopDuration;  // approx. in ms
+        let tickCount = 0;
+        let snake = Snake.new(getEmptyTile(null), 5);
+        let food = Food.new(getEmptyTile(snake));
+        let score = Score.new();
+        let redraw = true;
+        return this;
+    }
+
+    method Tile getEmptyTile(Snake s) {
+        var Tile t;
+
+        // map is 32 tiles wide, 16 tiles tall
+        let t = Tile.new(Random.randInt(32) * 16, Random.randInt(16) * 16);
+
+        if (~(s = null)) {
+            while (s.collides(t.getX(), t.getY())) {
+                let t = Tile.new(Random.randInt(32) * 16, Random.randInt(16) * 16);
+            }
+        }
+
+        return t;
+    }
+
+    /** Main game loop **/
+    method void run() {
+        while (snake.isAlive()) {
+            do handleInput();
+            do update();
+            if (redraw) {
+                do draw();
+                let redraw = false;
+            }
+        }
+        return;
+    }
+
+    /** Process user input **/
+    method void handleInput() {
+        var char key;
+        let key = Keyboard.keyPressed();
+
+        if (key = 131) { do snake.changeDirection(0, -1); }  // up arrow
+        if (key = 133) { do snake.changeDirection(0, 1); }   // down arrow
+        if (key = 130) { do snake.changeDirection(-1, 0); }  // left arrow
+        if (key = 132) { do snake.changeDirection(1, 0); }   // right arrow
+
+        return;
+    }
+
+    /** Update game state **/
+    method void update() {
+        var Segment head;
+        let head = snake.getHead();
+
+        if (tickCount < dt) {
+            let tickCount = tickCount + 1;
+            return;
+        }
+        let tickCount = 0;
+        do snake.update();
+
+        // check if snake ate food
+        if ((head.getX() = food.getX()) & (head.getY() = food.getY())) {
+            do snake.grow();
+            do food.dispose();
+            let food = Food.new(getEmptyTile(snake));
+            do score.increment();
+        }
+
+        let redraw = true;
+        return;
+    }
+
+    /** Draw game objects **/
+    method void draw() {
+        do Screen.clearScreen();
+        do snake.draw();
+        do food.draw();
+        do score.draw();
+        return;
+    }
+}

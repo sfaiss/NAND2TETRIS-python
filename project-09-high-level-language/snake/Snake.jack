@@ -1,0 +1,144 @@
+/** Actual game character the player is operating */
+class Snake {
+    field Segment head, tail;
+    field int vx, vy;  // direction
+    field boolean alive;
+
+    constructor Snake new(Tile start, int length) {
+        var Segment current, segmentNew;
+        var int i;
+
+        // construct body of the snake
+        let head = Segment.new(start);
+        let tail = head;
+        let current = head;
+
+        let i = 1;
+        while (i < length) {
+            // body of snake will be hidden "under" the head
+            let segmentNew = Segment.new(start);
+            do current.setNext(segmentNew);
+            do segmentNew.setPrev(current);
+            let current = segmentNew;
+            let i = i + 1;
+        }
+
+        let tail = current;
+
+        // no initial direction, let user decide
+        let vx = 0;
+        let vy = 0;
+
+        let alive = true;
+
+        return this;
+    }
+
+    method void update() {
+        do move();
+        return;
+    }
+
+    method void draw() {
+        var Segment current;
+        let current = head;
+        while (~(current = null)) {
+            do current.draw();
+            let current = current.getNext();
+        }
+        return;
+    }
+
+    /** Return state of snake */
+    method boolean isAlive() {
+        return alive;
+    }
+
+    /** Kill snake */
+    method void die() {
+        let alive = false;
+        return;
+    }
+
+    /** Grow snake by one segment */
+    method void grow() {
+        var Segment tailNew;
+        let tailNew = Segment.new(tail.getTile());
+        do tail.setNext(tailNew);
+        do tailNew.setPrev(tail);
+        let tail = tailNew;
+        return;
+    }
+
+    /** Check for collisions */
+    method boolean collides(int xNew, int yNew) {
+        var Segment current;
+
+        // wall collision
+        if ((xNew < 0) | (yNew < 0) | (xNew > (512 - 16)) | (yNew > (256 - 16))) {
+            return true;
+        }
+
+        // self collision
+        let current = head;
+        while (~(current = null)) {
+            if ((xNew = current.getX()) & (yNew = current.getY())) {
+                return true;
+            }
+            let current = current.getNext();
+        }
+        return false;
+    }
+
+    /** Advance snake one step */
+    method void move() {
+        var Tile new;
+        var Segment headNew, tailNew, tailOld;
+
+        // start of game - user hasn't chosen direction yet
+        if ((vx = 0) & (vy = 0)) {
+            return;
+        }
+
+        // new position
+        let new = Tile.new(16 * vx + head.getX(), 16 * vy + head.getY());
+
+        if (collides(new.getX(), new.getY())) {
+            do die();
+            return;
+        }
+
+        // new head
+        let headNew = Segment.new(new);
+        do headNew.setNext(head);
+        do head.setPrev(headNew);
+        let head = headNew;
+
+        // remove tail
+        let tailOld = tail;
+        let tailNew = tail.getPrev();
+        do tailNew.setNext(null);
+        let tail = tailNew;
+        do tailOld.dispose();
+
+        return;
+    }
+
+    /** Change direction of movement */
+    method void changeDirection(int vxNew, int vyNew) {
+        var boolean xReversed, yReversed;
+        let xReversed = (vx = 1 & vxNew = -1) | (vx = -1 & vxNew = 1);
+        let yReversed = (vy = 1 & vyNew = -1) | (vy = -1 & vyNew = 1);
+        if (xReversed | yReversed) {
+            // ignore reversal of direction
+            return;
+        }
+        let vx = vxNew;
+        let vy = vyNew;
+        return;
+    }
+
+    method Segment getHead() {
+        return head;
+    }
+}

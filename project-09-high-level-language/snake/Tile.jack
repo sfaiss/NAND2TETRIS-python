@@ -1,0 +1,23 @@
+/** Tile on the map */
+class Tile {
+    field int x, y;
+
+    constructor Tile new(int xStart, int yStart) {
+        let x = xStart;
+        let y = yStart;
+        return this;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+}

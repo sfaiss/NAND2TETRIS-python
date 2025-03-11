@@ -1,0 +1,21 @@
+/** Player's score */
+class Score {
+    field int score;
+
+    constructor Score new() {
+        let score = 0;
+        return this;
+    }
+
+    method void increment() {
+        let score = score + 1;
+        return;
+    }
+
+    method void draw() {
+        do Output.moveCursor(0, 0);
+        do Output.printString("Score: ");
+        do Output.printInt(score);
+        return;
+    }
+}

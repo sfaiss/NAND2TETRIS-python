@@ -1,0 +1,15 @@
+/** Linear congruential generator */
+class Random {
+    static int seed;
+
+    function void init(int s) {
+        let seed = s;
+        return;
+    }
+
+    /** Get the next random integer in the range [0, max), up to 1023 */
+    function int randInt(int max) {
+        let seed = (seed * 251 + 33) & 1023;
+        return Mod.mod(seed, max);
+    }
+}
