@@ -1,5 +1,7 @@
+[tool.mypy]
+exclude = ["tests"]
+
 [tool.ruff]
-line-length = 79
 extend-exclude = ["**/tests"]
 
 [tool.ruff.lint]
@@ -10,4 +12,7 @@ select = [
     "F",   # Pyflakes
     "PL",  # Pylint
     "UP",  # pyupgrad
+]
+ignore = [
+    "PLR0911",  # Too many return statements
 ]

@@ -1,5 +1,5 @@
 {
-    "editor.rulers": [79],
+    "editor.rulers": [79, 88],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true
 }
