@@ -1,6 +1,6 @@
 """Parse tokens according to the grammar of the Jack language."""
 
-from collections.abc import Container, Generator
+from collections.abc import Container
 from contextlib import suppress
 
 from structural_element import (

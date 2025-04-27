@@ -7,9 +7,8 @@ from tokens import Token, TokenStream, TokenType
 
 
 def test_should_return_elementtrees():
-    trees = analyze("")
-    assert len(trees) == 2
-    for tree in trees:
+    tree_1, tree_2, *rest = analyze("")
+    for tree in (tree_1, tree_2):
         assert isinstance(tree, ElementTree)
 
 
@@ -32,9 +31,10 @@ def test_should_tokenize_before_parsing(mocker: MockerFixture):
     mocked_tokenize = mocker.patch("analyzer.tokenize", return_value=token_generator)
     mocked_token_stream = mocker.patch("analyzer.TokenStream", side_effect=lambda *args, **kwargs: TokenStream(*args, **kwargs))
     mocked_parse = mocker.patch("analyzer.Parser.parse")
+    mocked_engine = mocker.patch("analyzer.CompilationEngine.compile")
 
     analyze(code)
 
     mocked_tokenize.assert_called_once_with(code)
-    mocked_token_stream.assert_called_once_with(tokens)  # generator should be converted to tuple
+    mocked_token_stream.assert_called_with(tokens)  # generator should be converted to tuple
     mocked_parse.assert_called_once()

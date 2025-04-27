@@ -6,6 +6,7 @@ import sys
 from collections.abc import Iterable
 from xml.etree.ElementTree import Element, ElementTree, SubElement, indent
 
+from compilation_engine import CompilationEngine
 from structural_element import StructuralElement
 from token_parser import Parser
 from tokenizer import tokenize
@@ -47,6 +48,12 @@ def create_grammar_tree(grammar: StructuralElement) -> ElementTree:
     """Create a formatted XML-tree containing grammar information."""
 
     def _get_node(node: Token | StructuralElement) -> Element:
+        if node is None:
+            element = Element("class")
+            element.text = "\n"
+            element.tail = "\n"
+            return element
+
         if isinstance(node, Token):
             element = Element(str(node.type))
             element.text = f" {node.value} "
@@ -67,17 +74,23 @@ def create_grammar_tree(grammar: StructuralElement) -> ElementTree:
     return ElementTree(root)
 
 
-def analyze(jack_code: str) -> tuple[ElementTree, ElementTree]:
+def analyze(jack_code: str) -> tuple[ElementTree, ElementTree, list[str]]:
     """Build a XML-tree from Jack source code."""
     pure_code = remove_comments(jack_code)
     tokens = tuple(tokenize(pure_code))
-    token_stream = TokenStream(tokens)
-    parser = Parser(token_stream)
+    parser = Parser(TokenStream(tokens))
     grammar = parser.parse()
-    return create_token_tree(tokens), create_grammar_tree(grammar)
+    engine = CompilationEngine(TokenStream(tokens))
+    vm_code = engine.compile()
+    return create_token_tree(tokens), create_grammar_tree(grammar), vm_code
 
 
-def main(user_input: str) -> None:
+def main(
+    user_input: str,
+    token_xml: bool = False,
+    grammar_xml: bool = False,
+    vm: bool = True,
+) -> None:
     """Main entry point. Delegate user input to the analyzer."""
     # first user provided argument is either a file or a directory of asm-files
     path = pathlib.Path(user_input)
@@ -91,21 +104,24 @@ def main(user_input: str) -> None:
         jack_files = [path]
 
     for jack_file in jack_files:
-        token_file = jack_file.parent / f"{jack_file.stem}T.xml"  # T for token
-        grammar_file = jack_file.with_suffix(".xml")  # no suffix for grammar
-
         with open(jack_file) as f:
             jack_code = f.read()
+        token_tree, grammar_tree, vm_code = analyze(jack_code)
 
-        token_tree, grammar_tree = analyze(jack_code)
-        token_tree.write(token_file)
-
-        indent(grammar_tree, space="  ")
-        grammar_tree.write(grammar_file)
+        if token_xml:
+            # T for token
+            token_file = jack_file.parent / f"{jack_file.stem}T.xml"
+            token_tree.write(token_file)
+        if grammar_xml:
+            # no suffix for grammar
+            grammar_file = jack_file.with_suffix(".xml")
+            indent(grammar_tree, space="  ")
+            grammar_tree.write(grammar_file)
+        if vm:
+            vm_file = jack_file.with_suffix(".vm")
+            with open(vm_file, mode="w", encoding="utf-8") as f:
+                f.write("\n".join(vm_code))
 
 
 if __name__ == "__main__":
-    for jack_file in pathlib.Path(r"C:\Users\Simon\Desktop\nand2tetris-python\project-10-11-Compiler\tests\data").glob("**/*.jack"):
-        main(jack_file)
-    # main(r"project-10-11-Compiler\tests\data\10\ArrayTest\Main.jack")
-    # main(sys.argv[1])
+    main(sys.argv[1])
