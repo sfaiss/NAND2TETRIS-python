@@ -1,0 +1,74 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+
+    static Array ram, heap, freeList;
+
+    /** Initializes the class. */
+    function void init() {
+        let ram = 0;
+        let heap = 2048;
+        let freeList = heap;
+        let freeList[0] = null;  // next segment
+        let freeList[1] = 14333;  // total heap size (0x3FFF - 0x0800 - 2)
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function Array alloc(int size) {
+        var int current, block;
+
+        if (~(size > 0)) {
+            do Sys.error(5);  // Allocated memory size must be positive
+        }
+
+        let current = freeList;
+        while (current[1] < (size + 2)) {
+            if (current[0] = null) {
+                // no possible segment available
+                do Sys.error(6);  // Heap overflow
+            }
+            let current = current[0];  // next segment
+        }
+        // carve out block from end of current segment
+        let block = current + current[1] - size;
+        let block[-2] = null;  // no next segment
+        let block[-1] = size;
+        let current[1] = current[1] - (size + 2);  // remaining size
+        return block;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var int current;
+        let current = freeList;
+        // iterate to end of list
+        while (~(current[0] = null)) {
+            let current = current[0];
+        }
+        // append to end of list
+        let current[0] = o - 2;
+        return;
+    }
+}

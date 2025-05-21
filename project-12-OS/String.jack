@@ -1,0 +1,195 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/String.jack
+
+/**
+ * Represents character strings. In addition for constructing and disposing
+ * strings, the class features methods for getting and setting individual
+ * characters of the string, for erasing the string's last character,
+ * for appending a character to the string's end, and more typical
+ * string-oriented operations.
+ */
+class String {
+    field int length, capacity;
+    field Array str;
+
+    /** constructs a new empty string with a maximum length of maxLength
+     *  and initial length of 0. */
+    constructor String new(int maxLength) {
+        if (maxLength < 0) {
+            do Sys.error(14);  // Maximum length must be non-negative
+        }
+
+        if (maxLength > 0) {
+            let str = Array.new(maxLength);
+        }
+        else {
+            let str = null;  // zero-capacity string
+        }
+
+        let length = 0;
+        let capacity = maxLength;
+        return this;
+    }
+
+    /** Disposes this string. */
+    method void dispose() {
+        if (~(str = null)) {
+            do str.dispose();
+        }
+        return;
+    }
+
+    /** Returns the current length of this string. */
+    method int length() {
+        return length;
+    }
+
+    /** Returns the character at the j-th location of this string. */
+    method char charAt(int j) {
+        if ((j < 0) | ~(j < length)) {
+            do Sys.error(15);  // String index out of bounds
+        }
+        return str[j];
+    }
+
+    /** Sets the character at the j-th location of this string to c. */
+    method void setCharAt(int j, char c) {
+        if ((j < 0) | ~(j < length)) {
+            do Sys.error(16);  // String index out of bounds
+        }
+        let str[j] = c;
+        return;
+    }
+
+    /** Appends c to this string's end and returns this string. */
+    method String appendChar(char c) {
+        if ((str = null) | ~(length < capacity)) {
+            do Sys.error(17);  // String is full
+        }
+        let str[length] = c;
+        let length = length + 1;
+        return this;
+    }
+
+    /** Erases the last character from this string. */
+    method void eraseLastChar() {
+        if ((str = null) | (length = 0)) {
+            do Sys.error(18);  // String is empty
+        }
+        let length = length - 1;
+        return;
+    }
+
+    /** Returns the integer value of this string, 
+     *  until a non-digit character is detected. */
+    method int intValue() {
+        return string2Int(this);
+    }
+
+    /** Checks for digit character. */
+    function boolean isDigit(char c) {
+        return (c > 47) & (c < 58);  // '0' = 48, ..., '9' = 57
+    }
+
+    /** Returns the integer representated by a string. */
+    function int chr(char c) {
+        if (~String.isDigit(c)) {
+            do Sys.error(5);
+        }
+        return c - 48;  // '0' = 48, '1' = 49, ...
+    }
+
+    /** Returns the character represented by an integer. */
+    function char ord(int i) {
+        if (~((i > 0) & (i < 10))) {
+            do Sys.error(5);
+        }
+        return i + 48;  // '0' = 48, '1' = 49, ...
+    }
+
+    /* Returns the integer value of a string
+     * of digit characters, assuming that str[0]
+     * represents the most significant digit. */
+    method int string2Int(String s) {
+        var int i, n, d;
+        var boolean negative;
+        let n = 0;
+
+        if (s.charAt(0) = 45) {  // '-'
+            let negative = true;
+            let i = 1;
+        }
+        else {
+            let negative = false;
+            let i = 0;
+        }
+
+        while (i < s.length()) {
+            if (String.isDigit(s.charAt(i))) {
+                let d = String.chr(s.charAt(i));
+                let n = n * 10 + d;
+                let i = i + 1;
+            }
+            else {
+                // terminate loop at first non-digit character
+                let i = s.length();
+            }
+        }
+
+        if (negative) {
+            let n = -n;
+        }
+        return n;
+    }
+
+    /** Returns the string representation of a non-negative integer. */
+    method void int2String(int val) {
+        var int lastDigit, remaining;
+ 
+        if (val < 10) {
+            if (length = capacity) {
+                do Sys.error(19);  // Insufficient string capacity
+            }
+            do appendChar(String.ord(val));
+            return;
+        }
+
+        let remaining = val / 10;
+        let lastDigit = val - (remaining * 10);
+        do int2String(remaining);
+        do appendChar(String.ord(lastDigit));
+        return;
+    }
+
+    /** Sets this string to hold a representation of the given value. */
+    method void setInt(int val) {
+        // reset current string
+        let length = 0;
+
+        // handle negative numbers
+        if (val < 0) {
+            do appendChar(45);  // '-'
+            let val = -val;
+        }
+
+        do int2String(val);
+        return;
+    }
+
+    /** Returns the new line character. */
+    function char newLine() {
+        return 128;
+    }
+
+    /** Returns the backspace character. */
+    function char backSpace() {
+        return 129;
+    }
+
+    /** Returns the double quote (") character. */
+    function char doubleQuote() {
+        return 34;
+    }
+}

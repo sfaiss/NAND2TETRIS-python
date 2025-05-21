@@ -1,0 +1,232 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+    static boolean isBlack;
+    static Array twoToThe;
+
+    /** Initializes the Screen. */
+    function void init() {
+        var int i, n;
+        let isBlack = true;
+        let twoToThe = Array.new(16);
+        let i = 0;
+        let n = 1;
+        while (i < 16) {
+            let twoToThe[i] = n;
+            let i = i + 1;
+            let n = n + n;
+        }
+        return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int row, col;
+        let row = 0;
+        let col = 0;
+        while (row < 256) {
+            while (col < 32) {
+                do Memory.poke(16384 + (32 * row) + col, 0);
+                let col = col + 1;
+            }
+            let col = 0;
+            let row = row + 1;
+        }
+        return;
+    }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+        let isBlack = b;
+        return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        var int address, value, bit;
+
+        if ((x < 0) | (x > 511) | (y < 0) | (y > 255)) {
+            do Sys.error(7);  // Illegal pixel coordinates
+        }
+
+        let address = 16384 + (32 * y) + (x / 16);
+        let bit = x - (16 * (x / 16));
+        let value = Memory.peek(address);
+        if (isBlack) {
+            let value = value | twoToThe[bit];
+        } else {
+            let value = value & (~twoToThe[bit]);
+        }
+        do Memory.poke(address, value);
+        return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+
+        if ((x1 < 0) | (x1 > 511) | (y1 < 0) | (y1 > 255)) {
+            do Sys.error(8);  // Illegal line coordinates
+        }
+
+        if ((x2 < 0) | (x2 > 511) | (y2 < 0) | (y2 > 255)) {
+            do Sys.error(8);  // Illegal line coordinates
+        }
+
+        if (y1 = y2) {
+            do Screen.drawHorizontalLine(x1, x2, y1);
+            return;
+        }
+        if (x1 = x2) {
+            do Screen.drawVerticalLine(x1, y1, y2);
+            return;
+        }
+        do Screen.drawDiagonalLine(x1, y1, x2, y2);
+        return;
+    }
+
+    /** Draws a diagonal line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawDiagonalLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, a, b, diff, temp;
+
+        if (x1 > x2) {
+            let temp = x1;
+            let x1 = x2;
+            let x2 = temp;
+            let temp = y1;
+            let y1 = y2;
+            let y2 = temp;
+        }
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let a = 0;
+        let b = 0;
+        let diff = 0;
+
+        // falling line
+        if (dy > 0) {
+            while ((a < (dx + 1)) & (b < (dy + 1))) {
+                do Screen.drawPixel(x1 + a, y1 + b);
+                if (diff < 0) {
+                    let a = a + 1;
+                    let diff = diff + dy;
+                }
+                else {
+                    let b = b + 1;
+                    let diff = diff - dx;
+                }
+            }
+            return;
+        }
+        // rising line
+        else {
+            while ((a < (dx + 1)) & (b > (dy - 1))) {
+                do Screen.drawPixel(x1 + a, y1 + b);
+                if (diff > 0) {
+                    let a = a + 1;
+                    let diff = diff + dy;
+                }
+                else {
+                    let b = b - 1;
+                    let diff = diff + dx;
+                }
+            }
+            return;
+        }
+
+        return;
+    }
+
+    /** Draws a horizontal line from pixel (x1,y) to pixel (x2,y), using the current color. */
+    function void drawHorizontalLine(int x1, int x2, int y) {
+        var int x, temp;
+
+        if (x1 > x2) {
+            let temp = x1;
+            let x1 = x2;
+            let x2 = temp;
+        }
+
+        let x = x1;
+
+        while (x < (x2 + 1)) {
+            do Screen.drawPixel(x, y);
+            let x = x + 1;
+        }
+        return;
+    }
+
+    /** Draws a vertical line from pixel (x,y1) to pixel (x,y2), using the current color. */
+    function void drawVerticalLine(int x, int y1, int y2) {
+        var int y, temp;
+
+        if (y1 > y2) {
+            let temp = y1;
+            let y1 = y2;
+            let y2 = temp;
+        }
+
+        let y = y1;
+
+        while (y < (y2 + 1)) {
+            do Screen.drawPixel(x, y);
+            let y = y + 1;
+        }
+        return;
+    }
+
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        var int y;
+
+        if ((x1 < 0) | (x1 > 511) | (y1 < 0) | (y1 > 255)) {
+            do Sys.error(9);  // Illegal rectangle coordinates
+        }
+
+        if ((x2 < 0) | (x2 > 511) | (y2 < 0) | (y2 > 255)) {
+            do Sys.error(9);  // Illegal rectangle coordinates
+        }
+
+        let y = y1;
+
+        while (y < (y2 + 1)) {
+            do Screen.drawLine(x1, y, x2, y);
+            let y = y + 1;
+        }
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        var int dy, rSquared, z;
+
+        if (((x - r) < 0) | ((x + r) > 511) | ((y - r) < 0) | ((y + r) > 255)) {
+            do Sys.error(12);  // Illegal center coordinates
+        }
+
+        if ((r < 0) | (r > 181)) {
+            do Sys.error(13);  // Illegal radius
+        }
+
+        let rSquared = r * r;
+        let dy = -r;
+
+        while (dy < (r + 1)) {
+            let z = Math.sqrt(rSquared - (dy * dy));
+            do Screen.drawHorizontalLine(x - z, x + z, y + dy);
+            let dy = dy + 1;
+        }
+        return;
+    }
+}
